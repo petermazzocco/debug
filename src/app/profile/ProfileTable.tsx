@@ -5,14 +5,17 @@ import { useAccount } from "wagmi";
 import { Connected, Disconnected } from "../components/Connection";
 
 export default function ClaimTokens() {
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   return (
     <div className="mt-24">
       <Disconnected>
-        <ConnectKit />
+        <div className="flex flex-col items-center space-y-4 justify-center">
+          <p>Connect To View</p>
+          <ConnectKit />
+        </div>
       </Disconnected>
       <Connected>
-        <div className="flex flex-col space-y-10 items-center justify-center">
+        <div className="flex flex-col space-y-10 items-center">
           <div className="indicator">
             <span className="indicator-item badge badge-accent">
               {address?.slice(0, 3)}...{address?.slice(-4)}
@@ -29,6 +32,31 @@ export default function ClaimTokens() {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="overflow-x-auto">
+            <h2>Recent Journal Entries</h2>
+            <table className="table">
+              {/* head */}
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Title</th>
+                  <th>Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* row 1 */}
+                <tr>
+                  <th></th>
+                  <td>Journal Entry 1</td>
+                  <td>0/00/00</td>
+                  <td>
+                    <button className="btn btn-sm btn-secondary">Read</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </Connected>

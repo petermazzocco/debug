@@ -17,7 +17,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           "--ck-connectbutton-font-size": ".7rem",
           "--ck-connectbutton-color": "#000000",
           "--ck-connectbutton-background": "#FBFFF1",
-          "--ck-body-background": "#FBFFF1",
           "--ck-body-color": "#000000",
           "--ck-font-family": "Quicksand",
           "--ck-connectbutton-border-radius": "0.4rem",

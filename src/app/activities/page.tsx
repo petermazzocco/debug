@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <div className="min-h-screen">
       <h2 className="text-2xl font-bold text-center">debug.activities</h2>
-      <div className="grid xl:grid-cols-3 grid-cols-1 lg:grid-cols-2 gap-24 m-24 justify-center place-items-center">
+      <div className="grid grid-cols-1 gap-24 m-24 justify-center place-items-center mx-8">
         {activities.map((activity, i) => (
           <div key={i} className="card col-span-1 w-96 bg-neutral shadow-xl">
             <figure>

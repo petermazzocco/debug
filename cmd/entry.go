@@ -4,9 +4,11 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"debug-cli/entries"
+	"debug-cli/tui"
 	"fmt"
+	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +19,13 @@ var createCmd = &cobra.Command{
 	Long:  `Talk about what's bothering you, what's happening, or anything else!`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		text := entries.CreateNewEntry()
-		fmt.Println("Your entry", text)
+		// text := entries.CreateNewEntry()
+		// fmt.Println("Your entry", text)
+		p := tea.NewProgram(tui.InitialModel())
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("Alas, there's been an error: %v", err)
+			os.Exit(1)
+		}
 	},
 }
 

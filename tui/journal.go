@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"debug-cli/entries"
+	"debug/entries"
 	"fmt"
 	"strings"
 	"time"
@@ -31,6 +31,9 @@ var (
 			Bold(true).
 			Padding(0, 1)
 
+	// Journal subheader style
+	subHeaderStyle = lipgloss.NewStyle().Foreground(highlight).Bold(false).Padding(0, 2)
+
 	// Border style for the text area
 	textAreaStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -43,6 +46,7 @@ var (
 type model struct {
 	state        int
 	choices      []string
+	questions    []string
 	cursor       int
 	selected     map[int]struct{}
 	textarea     textarea.Model
@@ -68,7 +72,8 @@ func InitialModel() model {
 
 	return model{
 		state:        stateMenu,
-		choices:      []string{"Basic journal entry", "Ask me a question", "Give me a prompt"},
+		choices:      []string{"Basic journal entry"},
+		questions:    []string{"What was the best thing about your day?", "Who made you smile the most today?"},
 		cursor:       0,
 		selected:     make(map[int]struct{}),
 		textarea:     ta,
@@ -129,11 +134,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = stateMenu
 
 			case "ctrl+s":
-				// Save the content
-				m.content = m.textarea.Value()
-				m.state = stateMenu
-
-			case "ctrl+f":
 				// Get the content of the textarea
 				content := m.textarea.Value()
 				// Save content to the system locally
@@ -145,6 +145,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.saveStatusAt = time.Now()
+				m.state = stateMenu
 
 			default:
 				// Handle text input
@@ -161,7 +162,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	if m.state == stateMenu {
 		// Style your menu items
-		title := titleStyle.Render("Journal Entry Options")
+		title := titleStyle.Render("Ready to debug?")
+		subHeader := subHeaderStyle.Render("Select an option below to get started")
 
 		// Create a styled list of choices
 		var menuItems []string
@@ -182,7 +184,7 @@ func (m model) View() string {
 		menu := lipgloss.JoinVertical(lipgloss.Left, menuItems...)
 		footer := lipgloss.NewStyle().Foreground(subtle).Render("\nPress q to quit.")
 
-		return lipgloss.JoinVertical(lipgloss.Left, title, "", menu, footer)
+		return lipgloss.JoinVertical(lipgloss.Left, title, subHeader, "", menu, footer)
 	} else {
 		// Journal writing view with styled textarea
 		journalTitle := titleStyle.Render("My Journal")
@@ -207,7 +209,7 @@ func (m model) View() string {
 		// Add styled instructions
 		instructions := lipgloss.NewStyle().
 			Foreground(subtle).
-			Render("Press ESC to cancel, Ctrl+S to save, Crtl+F to finalize entry")
+			Render("Press ESC to cancel, Ctrl+S to save locally")
 
 		return lipgloss.JoinVertical(lipgloss.Left,
 			journalTitle,

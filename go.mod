@@ -1,4 +1,4 @@
-module debug-cli
+module debug
 
 go 1.23.2
 

@@ -1,7 +1,10 @@
 package tui
 
 import (
+	"debug-cli/entries"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,14 +41,16 @@ var (
 )
 
 type model struct {
-	state    int
-	choices  []string
-	cursor   int
-	selected map[int]struct{}
-	textarea textarea.Model
-	content  string
-	width    int
-	height   int
+	state        int
+	choices      []string
+	cursor       int
+	selected     map[int]struct{}
+	textarea     textarea.Model
+	content      string
+	width        int
+	height       int
+	saveStatus   string
+	saveStatusAt time.Time
 }
 
 // In your InitialModel function
@@ -62,14 +67,16 @@ func InitialModel() model {
 	ta.SetHeight(height - 10) // Space for title and footer
 
 	return model{
-		state:    stateMenu,
-		choices:  []string{"Basic journal entry", "Ask me a question", "Give me a prompt"},
-		cursor:   0,
-		selected: make(map[int]struct{}),
-		textarea: ta,
-		content:  "",
-		width:    width,
-		height:   height,
+		state:        stateMenu,
+		choices:      []string{"Basic journal entry", "Ask me a question", "Give me a prompt"},
+		cursor:       0,
+		selected:     make(map[int]struct{}),
+		textarea:     ta,
+		content:      "",
+		width:        width,
+		height:       height,
+		saveStatus:   "",
+		saveStatusAt: time.Time{},
 	}
 }
 
@@ -126,6 +133,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.content = m.textarea.Value()
 				m.state = stateMenu
 
+			case "ctrl+f":
+				// Get the content of the textarea
+				content := m.textarea.Value()
+				// Save content to the system locally
+				err := entries.SaveEntryToFile(content)
+				if err != nil {
+					m.saveStatus = fmt.Sprintf("Error saving: %v", err.Error())
+				} else {
+					m.saveStatus = "Journal entry was saved locally!"
+				}
+
+				m.saveStatusAt = time.Now()
+
 			default:
 				// Handle text input
 				var textareaCmd tea.Cmd
@@ -170,15 +190,30 @@ func (m model) View() string {
 		// Apply border style to the textarea
 		textAreaView := textAreaStyle.Render(m.textarea.View())
 
+		// Status message
+		statusMsg := ""
+
+		if m.saveStatus != "" && time.Since(m.saveStatusAt) < 5*time.Second {
+			if strings.HasPrefix(m.saveStatus, "Error") {
+				statusMsg = lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#FF0000")).
+					Render(m.saveStatus)
+			} else {
+				statusMsg = lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#00FF00")).
+					Render(m.saveStatus)
+			}
+		}
 		// Add styled instructions
 		instructions := lipgloss.NewStyle().
 			Foreground(subtle).
-			Render("Press ESC to cancel, Ctrl+S to save")
+			Render("Press ESC to cancel, Ctrl+S to save, Crtl+F to finalize entry")
 
 		return lipgloss.JoinVertical(lipgloss.Left,
 			journalTitle,
 			"",
 			textAreaView,
+			statusMsg,
 			"",
 			instructions)
 	}

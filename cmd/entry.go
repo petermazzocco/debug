@@ -4,9 +4,10 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"debug/tui"
 	"fmt"
 	"os"
+
+	"github.com/petermazzocco/debug/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"

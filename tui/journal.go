@@ -1,10 +1,11 @@
 package tui
 
 import (
-	"debug/entries"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/petermazzocco/debug/entries"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"

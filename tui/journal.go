@@ -5,12 +5,36 @@ import (
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 )
 
 // App states
 const (
 	stateMenu int = iota
 	stateWriting
+)
+
+// Styling with lipgloss
+var (
+	// Define colors
+	subtle    = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
+	highlight = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	// special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
+
+	// Journal title style
+	titleStyle = lipgloss.NewStyle().
+			Foreground(highlight).
+			Bold(true).
+			Padding(0, 1)
+
+	// Border style for the text area
+	textAreaStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(highlight).
+			Padding(1).
+			Width(80).
+			Height(20)
 )
 
 type model struct {
@@ -20,24 +44,32 @@ type model struct {
 	selected map[int]struct{}
 	textarea textarea.Model
 	content  string
+	width    int
+	height   int
 }
 
+// In your InitialModel function
 func InitialModel() model {
 	ta := textarea.New()
 	ta.Placeholder = "Write your journal entry here..."
 	ta.Focus()
 
-	// Configure textarea
-	ta.SetWidth(80)
-	ta.SetHeight(20)
-	ta.ShowLineNumbers = false
+	// Get initial terminal size
+	width, height, _ := term.GetSize(0)
+
+	// Adjust textarea size based on terminal
+	ta.SetWidth(width - 10)   // Margins
+	ta.SetHeight(height - 10) // Space for title and footer
 
 	return model{
-		state:    stateMenu, // Start in menu state
+		state:    stateMenu,
 		choices:  []string{"Basic journal entry", "Ask me a question", "Give me a prompt"},
+		cursor:   0,
 		selected: make(map[int]struct{}),
 		textarea: ta,
 		content:  "",
+		width:    width,
+		height:   height,
 	}
 }
 
@@ -45,6 +77,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		// Update textarea dimensions
+		m.textarea.SetWidth(msg.Width - 10)
+		m.textarea.SetHeight(msg.Height - 10)
 	case tea.KeyMsg:
 		switch {
 		// Global key handling
@@ -101,34 +140,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.state == stateMenu {
-		// Menu view
-		s := "What type of entry do you want to create?\n\n"
+		// Style your menu items
+		title := titleStyle.Render("Journal Entry Options")
 
+		// Create a styled list of choices
+		var menuItems []string
 		for i, choice := range m.choices {
 			cursor := " "
 			if m.cursor == i {
 				cursor = ">"
 			}
 
-			checked := " "
-			if _, ok := m.selected[i]; ok {
-				checked = "x"
+			item := fmt.Sprintf("%s %s", cursor, choice)
+			if m.cursor == i {
+				// Highlight the selected item
+				item = lipgloss.NewStyle().Foreground(highlight).Render(item)
 			}
-
-			s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+			menuItems = append(menuItems, item)
 		}
 
-		s += "\nPress q to quit.\n"
-		return s
+		menu := lipgloss.JoinVertical(lipgloss.Left, menuItems...)
+		footer := lipgloss.NewStyle().Foreground(subtle).Render("\nPress q to quit.")
+
+		return lipgloss.JoinVertical(lipgloss.Left, title, "", menu, footer)
 	} else {
-		// Journal writing view
-		return fmt.Sprintf(
-			"# Journal Entry\n\n%s\n\nPress ESC to cancel, Ctrl+S to save\n",
-			m.textarea.View(),
-		)
+		// Journal writing view with styled textarea
+		journalTitle := titleStyle.Render("My Journal")
+
+		// Apply border style to the textarea
+		textAreaView := textAreaStyle.Render(m.textarea.View())
+
+		// Add styled instructions
+		instructions := lipgloss.NewStyle().
+			Foreground(subtle).
+			Render("Press ESC to cancel, Ctrl+S to save")
+
+		return lipgloss.JoinVertical(lipgloss.Left,
+			journalTitle,
+			"",
+			textAreaView,
+			"",
+			instructions)
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return textarea.Blink
+	return tea.Batch(
+		textarea.Blink,
+		tea.EnterAltScreen,
+	)
 }
